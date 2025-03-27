@@ -2,8 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Button, makeStyles } from "@fluentui/react-components";
 import { ArrowClockwise24Regular } from "@fluentui/react-icons";
 import { MessageBar, MessageBarType } from "@fluentui/react";
+import form from "form-urlencoded";
 
-// Styles
+// Pas deze aan naar jouw eigen site & lijst (let op de trailing colon bij de sitePath)
+const sitePath = "20200213bvlofc201315.sharepoint.com:/sites/H101-FAC-Voedinsgdienst:";
+const listId = "57642914-fce0-4ab7-8d47-1434d8964cc7";
+
 const useStyles = makeStyles({
   container: {
     display: "flex",
@@ -108,10 +112,6 @@ const useStyles = makeStyles({
   },
 });
 
-// Pas deze aan naar jouw eigen site & lijst
-const sitePath = "20200213bvlofc201315.sharepoint.com:/sites/H101-FAC-Voedinsgdienst:";
-const listId = "57642914-fce0-4ab7-8d47-1434d8964cc7";
-
 const CateringForm = () => {
   const styles = useStyles();
 
@@ -124,18 +124,6 @@ const CateringForm = () => {
   });
   const [loading, setLoading] = useState(true);
 
-
-  function Notification({ message, type, onDismiss }) {
-    return (
-      <MessageBar
-        messageBarType={type}
-        onDismiss={onDismiss}
-        dismissButtonAriaLabel="Sluiten"
-      >
-        {message}
-      </MessageBar>
-    );
-  }
   // Catering data
   const [cateringData, setCateringData] = useState({
     aantalPersonen: "",
@@ -143,6 +131,8 @@ const CateringForm = () => {
     opstelling: "Standaard",
     andereOpstelling: "",
   });
+
+  // Voor notificaties (bijv. MessageBar van FluentUI)
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
@@ -165,7 +155,7 @@ const CateringForm = () => {
         return;
       }
 
-      // Subject
+      // Haal onderwerp op
       if (item.subject && item.subject.getAsync) {
         item.subject.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -181,7 +171,7 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, subject }));
       }
 
-      // Location
+      // Haal locatie op
       if (item.location && item.location.getAsync) {
         item.location.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -204,7 +194,7 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, location }));
       }
 
-      // Start
+      // Haal starttijd op
       if (item.start && item.start.getAsync) {
         item.start.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -220,7 +210,7 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, start }));
       }
 
-      // End
+      // Haal eindtijd op
       if (item.end && item.end.getAsync) {
         item.end.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -252,14 +242,61 @@ const CateringForm = () => {
     setCateringData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // Pas de handleSubmit functie aan zodat deze de Graph-aanroep uitvoert
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Afspraakgegevens:", appointmentData);
     console.log("Cateringgegevens:", cateringData);
-    alert("Gegevens verstuurd (check console)");
+    try {
+      // Haal Graph-token op via fallback (SSO of fallback dialog)
+      const graphToken = await getGraphTokenWithFallback();
+      console.log("Ontvangen Graph token:", graphToken);
+
+      // Bouw het object met alle velden die je naar SharePoint wilt sturen
+
+      const startDate = new Date(appointmentData.start);
+      const isoStart = !isNaN(startDate.getTime()) ? startDate.toISOString() : null;
+
+
+      const itemFields = {
+        Title: appointmentData.subject || "Geen onderwerp",
+        Zaal: appointmentData.location || "Onbekend", // Zorg dat er een kolom 'Zaal' is
+        Datum: null,         // Gebruik de starttijd als datumveld (in ISO-formaat indien nodig)
+        Aantal: cateringData.aantalPersonen || "",
+        Opmerking: cateringData.opmerkingen || "",
+        Opstelling: cateringData.opstelling || "",
+      };
+
+
+      if (cateringData.opstelling === "Andere") {
+        itemFields.AndereOpstelling = cateringData.andereOpstelling || "";
+      }
+
+      const endpoint = `https://graph.microsoft.com/v1.0/sites/${sitePath}/lists/${listId}/items`;
+      const requestBody = { fields: itemFields };
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${graphToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error("Fout bij toevoegen item: " + errorText);
+      }
+
+      
+    } catch (error) {
+      console.error("Fout bij het versturen van het item:", error);
+      
+    }
   };
 
-  // 1) Fallback-auth: open Office dialog -> fallbackauthdialog.html -> MSAL login
+  // Fallback-authenticatie: opent een Office-dialog waarin MSAL de token ophaalt
   const fallbackAuth = () => {
     return new Promise((resolve, reject) => {
       const dialogUrl = window.location.origin + "/fallbackauthdialog.html";
@@ -275,7 +312,7 @@ const CateringForm = () => {
             const message = JSON.parse(args.message);
             if (message.status === "success") {
               dialog.close();
-              resolve(message.result); // Dit is het Graph access token
+              resolve(message.result); // Graph access token
             } else {
               dialog.close();
               reject(message.error || message.result);
@@ -289,62 +326,19 @@ const CateringForm = () => {
     });
   };
 
-  // 2) Probeer SSO, anders fallback
+  // Probeer eerst SSO, anders gebruik fallback
   const getGraphTokenWithFallback = async () => {
     try {
-      // Probeer SSO
       const bootstrapToken = await Office.auth.getAccessToken({
         allowSignInPrompt: true,
         allowConsentPrompt: true,
         forMSGraphAccess: true,
       });
-      // LET OP: In Outlook Desktop gooit dit meestal code 13012
-      // Als het wel werkt (bijv. Outlook Web), heb je hier 'bootstrapToken',
-      // maar we hebben geen server-side OBO. => We doen fallbackAuth
       console.log("Office SSO-token opgehaald, maar geen server OBO => fallback");
       return fallbackAuth();
     } catch (err) {
-      console.warn("SSO mislukt of niet ondersteund, val terug op fallback:", err);
+      console.warn("SSO mislukt of niet ondersteund, fallback auth wordt gebruikt:", err);
       return fallbackAuth();
-    }
-  };
-
-  // 3) Dummy item naar SharePoint sturen
-  const sendDummyItemToList = async () => {
-    try {
-      // Haal Graph token (via fallbackdialog)
-      const graphToken = await getGraphTokenWithFallback();
-      console.log("Ontvangen Graph token:", graphToken);
-
-      // Nu de POST naar je SharePoint-lijst via Graph
-      const endpoint = `https://graph.microsoft.com/v1.0/sites/${sitePath}/lists/${listId}/items`;
-      const dummyItem = {
-        fields: {
-          Title: " "
-        },
-      };
-
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${graphToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(dummyItem),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error("Fout bij toevoegen item: " + errorText);
-      }
-
-      setNotification({
-        message: "Dummy item succesvol toegevoegd aan de lijst!",
-        type: MessageBarType.success,
-      });
-    } catch (error) {
-      console.error("Fout bij het versturen van het dummy item:", error);
-      alert("Er is een fout opgetreden: " + error.message);
     }
   };
 
@@ -442,10 +436,18 @@ const CateringForm = () => {
         </div>
       </form>
 
-      {/* Testknop om een dummy item naar de SharePoint-lijst te sturen */}
-      <button className={styles.testButton} onClick={sendDummyItemToList}>
-        Test Dummy Item Versturen
-      </button>
+      {/* Notificatie */}
+      {notification && (
+        <div style={{ marginTop: "20px" }}>
+          <MessageBar
+            messageBarType={notification.type}
+            onDismiss={() => setNotification(null)}
+            dismissButtonAriaLabel="Sluiten"
+          >
+            {notification.message}
+          </MessageBar>
+        </div>
+      )}
     </div>
   );
 };
