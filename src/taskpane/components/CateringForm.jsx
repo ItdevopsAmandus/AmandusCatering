@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, makeStyles } from "@fluentui/react-components";
 import { ArrowClockwise24Regular } from "@fluentui/react-icons";
-import { MessageBar, MessageBarType } from "@fluentui/react";
+import { MessageBar } from "@fluentui/react-components";
 import form from "form-urlencoded";
 
 // Pas deze aan naar jouw eigen site & lijst (let op de trailing colon bij de sitePath)
@@ -94,11 +94,19 @@ const useStyles = makeStyles({
   submitButton: {
     backgroundColor: "#006a5a",
     color: "white",
-    padding: "10px 20px",
+    padding: "12px 24px",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
     fontSize: "16px",
+    transition: "background-color 0.3s, transform 0.2s",
+    "&:hover": {
+      backgroundColor: "#004d4d",
+      transform: "scale(1.02)",
+    },
+    "&:active": {
+      transform: "scale(0.98)",
+    },
   },
   testButton: {
     marginTop: "20px",
@@ -119,8 +127,8 @@ const CateringForm = () => {
   const [appointmentData, setAppointmentData] = useState({
     subject: "Laden...",
     location: "Laden...",
-    start: "Laden...",      // Voor de weergave (locale string)
-    startRaw: null,         // De ruwe datumwaarde (bijv. ISO)
+    start: "Laden...", // Weergavewaarde (locale string)
+    startRaw: null,    // Ruwe datumwaarde
     end: "Laden...",
   });
   const [loading, setLoading] = useState(true);
@@ -196,12 +204,11 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, location }));
       }
 
-      // Haal starttijd op: sla zowel de ruwe datumwaarde als de locale string op
+      // Haal starttijd op: sla zowel de ruwe waarde als de weergavewaarde op
       if (item.start && item.start.getAsync) {
         item.start.getAsync((result) => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
             const rawValue = result.value;
-            // Probeer de ruwe waarde direct als datum te gebruiken
             const displayValue = new Date(rawValue).toLocaleString();
             setAppointmentData((prev) => ({
               ...prev,
@@ -251,27 +258,25 @@ const CateringForm = () => {
     setCateringData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Gebruik de submit-knop ("Gegevens Versturen") om alle gegevens via Graph te verzenden
+  // Gebruik de submit-knop ("Aanvraag Versturen") om alle gegevens via Graph te verzenden
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Afspraakgegevens:", appointmentData);
     console.log("Cateringgegevens:", cateringData);
     try {
-      // Haal Graph-token op via fallback (SSO of fallback dialog)
       const graphToken = await getGraphTokenWithFallback();
       console.log("Ontvangen Graph token:", graphToken);
 
-      // Gebruik de ruwe starttijd om een ISO-string te maken
+      // Converteer de ruwe starttijd naar een ISO-string, indien geldig
       const isoStart =
         appointmentData.startRaw && !isNaN(new Date(appointmentData.startRaw).getTime())
           ? new Date(appointmentData.startRaw).toISOString()
           : "";
 
-      // Bouw het object met alle velden die je naar SharePoint wilt sturen.
       const itemFields = {
         Title: appointmentData.subject || "Geen onderwerp",
-        Zaal: appointmentData.location || "Onbekend", // Zorg dat de interne naam exact klopt
-        Datum: isoStart, // ISO datum voor het datumveld
+        Zaal: appointmentData.location || "Onbekend",
+        Datum: isoStart,
         Aantal: cateringData.aantalPersonen ? parseInt(cateringData.aantalPersonen, 10) : 0,
         Opmerking: cateringData.opmerkingen || "",
         Opstelling: cateringData.opstelling || "",
@@ -298,7 +303,10 @@ const CateringForm = () => {
         throw new Error("Fout bij toevoegen item: " + errorText);
       }
 
-      
+      setNotification({
+        message: "Aanvraag werd doorgestuurd!",
+        type: "success",
+      });
     } catch (error) {
       console.error("Fout bij het versturen van het item:", error);
       alert("Er is een fout opgetreden: " + error.message);
@@ -321,7 +329,7 @@ const CateringForm = () => {
             const message = JSON.parse(args.message);
             if (message.status === "success") {
               dialog.close();
-              resolve(message.result); // Graph access token
+              resolve(message.result);
             } else {
               dialog.close();
               reject(message.error || message.result);
@@ -361,7 +369,6 @@ const CateringForm = () => {
         Ververs Afspraakgegevens
       </Button>
 
-      {/* Afspraakgegevens kaart */}
       <div className={styles.appointmentCard}>
         <div className={styles.appointmentRow}>
           <span className={styles.appointmentLabel}>Onderwerp:</span>
@@ -393,7 +400,6 @@ const CateringForm = () => {
         </div>
       </div>
 
-      {/* Cateringformulier */}
       <form onSubmit={handleSubmit} className={styles.section}>
         <div className={styles.sectionHeader}>Catering Gegevens</div>
         <div className={styles.fieldLabel}>Aantal Personen (Koffie & Thee)</div>
@@ -444,16 +450,15 @@ const CateringForm = () => {
         )}
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button type="submit" className={styles.submitButton}>
-            Gegevens Versturen
+            Aanvraag Versturen
           </button>
         </div>
       </form>
 
-      {/* Notificatie */}
       {notification && (
         <div style={{ marginTop: "20px" }}>
           <MessageBar
-            messageBarType={notification.type}
+            appearance={notification.type}
             onDismiss={() => setNotification(null)}
             dismissButtonAriaLabel="Sluiten"
           >

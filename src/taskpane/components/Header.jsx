@@ -1,7 +1,7 @@
 import * as React from "react";
 import PropTypes from "prop-types";
-import { Image, tokens, makeStyles } from "@fluentui/react-components";
-import { DrinkCoffee24Regular } from "@fluentui/react-icons";
+import { makeStyles } from "@fluentui/react-components";
+import { DrinkCoffee24Regular, Info24Regular } from "@fluentui/react-icons";
 
 const useStyles = makeStyles({
   welcome__header: {
@@ -16,46 +16,65 @@ const useStyles = makeStyles({
     textAlign: "center",
     width: "100%",
   },
-  logo: {
-    width: "100px",
-    height: "100px",
+  logoIcon: {
+    fontSize: "48px", // Grotere grootte voor het logo
+    color: "#008075",
     marginBottom: "10px",
   },
   titleContainer: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    color: "#008075", // Huisstijl kleur
+    color: "#008075",
   },
   title: {
     fontSize: "24px",
     fontWeight: "bold",
     margin: 0,
   },
-  icon: {
-    fontSize: "28px",
-    color: "#008075",
+  subtitleBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    backgroundColor: "#f3f2f1",
+    border: "1px solid #e1dfdd",
+    padding: "8px 12px",
+    borderRadius: "4px",
+    fontSize: "14px",
+    color: "#333",
+    marginTop: "10px",
+    maxWidth: "80%",
+    textAlign: "left",
+  },
+  subtitleIcon: {
+    fontSize: "20px",
+    color: "#0078d4",
   },
 });
 
 const Header = (props) => {
-  const { title, logo, message } = props;
+  const { title, message } = props;
   const styles = useStyles();
 
   return (
     <section className={styles.welcome__header}>
-      <Image className={styles.logo} src={logo} alt={title} />
+      {/* Gebruik de koffie-icoon als logo */}
+      <DrinkCoffee24Regular className={styles.logoIcon} />
       <div className={styles.titleContainer}>
-        <DrinkCoffee24Regular className={styles.icon} />
-        <h1 className={styles.title}>{message}</h1>
+        <h1 className={styles.title}>{title}</h1>
       </div>
+      {message && (
+        <div className={styles.subtitleBox}>
+          <Info24Regular className={styles.subtitleIcon} />
+          <span>{message}</span>
+        </div>
+      )}
     </section>
   );
 };
 
 Header.propTypes = {
   title: PropTypes.string,
-  logo: PropTypes.string,
   message: PropTypes.string,
 };
 

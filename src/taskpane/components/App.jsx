@@ -37,7 +37,11 @@ const App = (props) => {
 
   return (
     <div className={styles.root}>
-      <Header logo="assets/PC_Sint-Amandus_beeldmerk_kleur_rgb.png" title={title} message="Catering Aanvraag" />
+     <Header 
+  logo="assets/PC_Sint-Amandus_beeldmerk_kleur_rgb.png" 
+  title={title} 
+  message="Hier kunt u een aanvraag doen voor catering. Controleer of de gegevens correct ingevuld zijn en klik op 'Ververs Afspraakgegevens' indien uw afspraak gewijzigd is." 
+/>
      
       <CateringForm/>      
   
