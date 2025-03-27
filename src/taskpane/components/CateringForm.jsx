@@ -115,11 +115,12 @@ const useStyles = makeStyles({
 const CateringForm = () => {
   const styles = useStyles();
 
-  // Outlook appointment data
+  // Outlook appointment data: sla zowel de ruwe als de weergavewaarde op
   const [appointmentData, setAppointmentData] = useState({
     subject: "Laden...",
     location: "Laden...",
-    start: "Laden...",
+    start: "Laden...",      // Voor de weergave (locale string)
+    startRaw: null,         // De ruwe datumwaarde (bijv. ISO)
     end: "Laden...",
   });
   const [loading, setLoading] = useState(true);
@@ -149,6 +150,7 @@ const CateringForm = () => {
           subject: "Geen afspraak geselecteerd",
           location: "Geen afspraak geselecteerd",
           start: "Geen afspraak geselecteerd",
+          startRaw: null,
           end: "Geen afspraak geselecteerd",
         });
         setLoading(false);
@@ -194,20 +196,26 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, location }));
       }
 
-      // Haal starttijd op
+      // Haal starttijd op: sla zowel de ruwe datumwaarde als de locale string op
       if (item.start && item.start.getAsync) {
         item.start.getAsync((result) => {
-          setAppointmentData((prev) => ({
-            ...prev,
-            start:
-              result.status === Office.AsyncResultStatus.Succeeded
-                ? new Date(result.value).toLocaleString()
-                : "Onbekend",
-          }));
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            const rawValue = result.value;
+            // Probeer de ruwe waarde direct als datum te gebruiken
+            const displayValue = new Date(rawValue).toLocaleString();
+            setAppointmentData((prev) => ({
+              ...prev,
+              start: displayValue,
+              startRaw: rawValue,
+            }));
+          } else {
+            setAppointmentData((prev) => ({ ...prev, start: "Onbekend", startRaw: null }));
+          }
         });
       } else {
-        const start = item.start ? new Date(item.start).toLocaleString() : "Onbekend";
-        setAppointmentData((prev) => ({ ...prev, start }));
+        const rawValue = item.start ? item.start : null;
+        const displayValue = rawValue ? new Date(rawValue).toLocaleString() : "Onbekend";
+        setAppointmentData((prev) => ({ ...prev, start: displayValue, startRaw: rawValue }));
       }
 
       // Haal eindtijd op
@@ -231,6 +239,7 @@ const CateringForm = () => {
         subject: "Fout bij ophalen",
         location: "Fout bij ophalen",
         start: "Fout bij ophalen",
+        startRaw: null,
         end: "Fout bij ophalen",
       });
     } finally {
@@ -242,7 +251,7 @@ const CateringForm = () => {
     setCateringData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Pas de handleSubmit functie aan zodat deze de Graph-aanroep uitvoert
+  // Gebruik de submit-knop ("Gegevens Versturen") om alle gegevens via Graph te verzenden
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Afspraakgegevens:", appointmentData);
@@ -252,21 +261,21 @@ const CateringForm = () => {
       const graphToken = await getGraphTokenWithFallback();
       console.log("Ontvangen Graph token:", graphToken);
 
-      // Bouw het object met alle velden die je naar SharePoint wilt sturen
+      // Gebruik de ruwe starttijd om een ISO-string te maken
+      const isoStart =
+        appointmentData.startRaw && !isNaN(new Date(appointmentData.startRaw).getTime())
+          ? new Date(appointmentData.startRaw).toISOString()
+          : "";
 
-      const startDate = new Date(appointmentData.start);
-      const isoStart = !isNaN(startDate.getTime()) ? startDate.toISOString() : null;
-
-
+      // Bouw het object met alle velden die je naar SharePoint wilt sturen.
       const itemFields = {
         Title: appointmentData.subject || "Geen onderwerp",
-        Zaal: appointmentData.location || "Onbekend", // Zorg dat er een kolom 'Zaal' is
-        Datum: null,         // Gebruik de starttijd als datumveld (in ISO-formaat indien nodig)
-        Aantal: cateringData.aantalPersonen || "",
+        Zaal: appointmentData.location || "Onbekend", // Zorg dat de interne naam exact klopt
+        Datum: isoStart, // ISO datum voor het datumveld
+        Aantal: cateringData.aantalPersonen ? parseInt(cateringData.aantalPersonen, 10) : 0,
         Opmerking: cateringData.opmerkingen || "",
         Opstelling: cateringData.opstelling || "",
       };
-
 
       if (cateringData.opstelling === "Andere") {
         itemFields.AndereOpstelling = cateringData.andereOpstelling || "";
@@ -292,7 +301,7 @@ const CateringForm = () => {
       
     } catch (error) {
       console.error("Fout bij het versturen van het item:", error);
-      
+      alert("Er is een fout opgetreden: " + error.message);
     }
   };
 
@@ -369,7 +378,11 @@ const CateringForm = () => {
         <div className={styles.appointmentRow}>
           <span className={styles.appointmentLabel}>Starttijd:</span>
           <span className={styles.appointmentValue}>
-            {loading ? "Laden..." : appointmentData.start}
+            {loading
+              ? "Laden..."
+              : appointmentData.start ||
+                (appointmentData.startRaw &&
+                  new Date(appointmentData.startRaw).toLocaleString())}
           </span>
         </div>
         <div className={styles.appointmentRowLast}>
