@@ -31,6 +31,10 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
+      # Voeg deze stap toe om de uitvoerrechten voor webpack te herstellen (optioneel)
+      - name: Fix permissions for webpack
+        run: chmod +x node_modules/.bin/webpack
+
       - name: Build the Project
         run: npm run build
 
@@ -51,10 +55,9 @@ jobs:
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_BRAVE_MUSHROOM_07685F203 }}
           action: "upload"
-          ###### Repository/Build Configurations - Adjust these values to match your project ######
           app_location: "/"          # Waar staat je package.json? (vaak de root)
           api_location: ""           # Als je geen aparte API hebt, laat dit leeg
-          output_location: "dist"     # Aangezien je build de "dist" map genereert
+          output_location: "dist"     # Jouw build output-map
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
