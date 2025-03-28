@@ -89,7 +89,7 @@ module.exports = async (env, options) => {
           },
           {
             // Kopieer index.html vanuit de public-map naar de root van de output-map
-            from: "public/index.html",
+            from: "src/public/index.html",
             to: "index.html",
           },
         ],
