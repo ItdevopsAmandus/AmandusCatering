@@ -33,7 +33,9 @@
     "form-urlencoded": "^6.1.5",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "regenerator-runtime": "^0.14.1"
+    "regenerator-runtime": "^0.14.1",
+    "webpack": "^5.98.0",
+    "webpack-cli": "^6.0.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",
@@ -70,8 +72,6 @@
     "source-map-loader": "^5.0.0",
     "ts-loader": "^9.5.1",
     "typescript": "^5.4.2",
-    "webpack": "^5.95.0",
-    "webpack-cli": "^5.1.4",
     "webpack-dev-server": "5.1.0"
   },
   "prettier": "office-addin-prettier-config",
