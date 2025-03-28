@@ -6,7 +6,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const webpack = require("webpack");
 
 const urlDev = "https://localhost:3000/";
-const urlProd = "https://www.contoso.com/"; // CHANGE THIS TO YOUR PRODUCTION DEPLOYMENT LOCATION
+const urlProd = "https://brave-mushroom-07685f203.6.azurestaticapps.net/";
 
 async function getHttpsOptions() {
   const httpsOptions = await devCerts.getHttpsServerOptions();
@@ -56,14 +56,14 @@ module.exports = async (env, options) => {
       ],
     },
     plugins: [
-      // Taskpane: maakt taskpane.html in dist op basis van src/taskpane/taskpane.html
+      // Genereer taskpane.html in de output-map op basis van src/taskpane/taskpane.html
       new HtmlWebpackPlugin({
         filename: "taskpane.html",
         template: "./src/taskpane/taskpane.html",
         chunks: ["polyfill", "taskpane", "react"],
       }),
 
-      // Kopieer assets en manifest*.xml
+      // Kopieer assets, manifestbestanden, index.html en fallbackauthdialog.html
       new CopyWebpackPlugin({
         patterns: [
           {
@@ -77,23 +77,25 @@ module.exports = async (env, options) => {
               if (dev) {
                 return content;
               } else {
-                // Vervang localhost door je production URL
+                // Vervang alle voorkomens van de dev-URL door de productie-URL
                 return content.toString().replace(new RegExp(urlDev, "g"), urlProd);
               }
             },
           },
-          // VOEG HIER JE NIEUWE PATROON TOE:
           {
-            // Pad naar je fallback HTML-bestand
-            // Pas aan naar jouw exacte pad in je project
+            // Kopieer fallbackauthdialog.html vanuit src/public
             from: "src/public/fallbackauthdialog.html",
-            // In de uiteindelijke build komt dit bestand als fallbackauthdialog.html in de root
             to: "fallbackauthdialog.html",
+          },
+          {
+            // Kopieer index.html vanuit de public-map naar de root van de output-map
+            from: "public/index.html",
+            to: "index.html",
           },
         ],
       }),
 
-      // Commands: maakt commands.html in dist op basis van src/commands/commands.html
+      // Genereer commands.html in de output-map op basis van src/commands/commands.html
       new HtmlWebpackPlugin({
         filename: "commands.html",
         template: "./src/commands/commands.html",
