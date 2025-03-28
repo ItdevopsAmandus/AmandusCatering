@@ -1,12 +1,12 @@
 import * as React from "react";
 import PropTypes from "prop-types";
 import Header from "./Header";
-import HeroList from "./HeroList";
-import TextInsertion from "./TextInsertion";
+
+
 import { makeStyles } from "@fluentui/react-components";
 import { Ribbon24Regular, LockOpen24Regular, DesignIdeas24Regular } from "@fluentui/react-icons";
-import { insertText } from "../taskpane";
-import InsertTextButton from './InsertTextButton';
+
+
 import CateringForm from "./CateringForm";
 
 const useStyles = makeStyles({

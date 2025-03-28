@@ -8,12 +8,12 @@
   <title>Fallback Auth Dialog</title>
 </head>
 <body>
-  <p>Authenticatie bezig, even geduld...</p>
+  <p>Authenticatie: We zoeken je naam op in het Grote Boek van Amandus...</p>
   <script>
-    // MSAL-configuratie
+    // MSAL
     const msalConfig = {
       auth: {
-        clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", // Jouw CLIENT_ID
+        clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", //CLIENT_ID
         authority: "https://login.microsoftonline.com/82022306-deb0-41be-94c4-763bf46d3547",
         redirectUri: window.location.origin + "/fallbackauthdialog.html",
         navigateToLoginRequestUrl: false
@@ -33,7 +33,7 @@
       }
     };
 
-    // Vereiste scopes: we willen o.a. naar SharePoint-lijsten kunnen schrijven
+    
     const loginRequest = {
       scopes: ["User.Read", "Sites.ReadWrite.All"]
     };
@@ -47,9 +47,9 @@
           // Nog geen token: start login
           msalInstance.loginRedirect(loginRequest);
         } else {
-          // We hebben een response: check of het een access token is of alleen een id_token
+          
           if (response.accessToken && response.tokenType === "Bearer") {
-            // Gelukt: we hebben een Graph-access token
+           
             Office.onReady(() => {
               Office.context.ui.messageParent(JSON.stringify({
                 status: "success",
@@ -57,7 +57,7 @@
               }));
             });
           } else if (response.idToken) {
-            // We hebben alleen een id_token => vraag een access token aan
+           
             msalInstance.acquireTokenRedirect(loginRequest);
           }
         }
