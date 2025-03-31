@@ -4,12 +4,12 @@ import { ArrowClockwise24Regular } from "@fluentui/react-icons";
 import { MessageBar } from "@fluentui/react-components";
 import form from "form-urlencoded";
 
-// Pas deze aan naar jouw eigen site & lijst (let op de trailing colon bij de sitePath)
 const sitePath = "20200213bvlofc201315.sharepoint.com:/sites/H101-FAC-Voedinsgdienst:";
 const listId = "57642914-fce0-4ab7-8d47-1434d8964cc7";
 
 const useStyles = makeStyles({
   container: {
+    position: "relative", // toegevoegd
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -123,17 +123,15 @@ const useStyles = makeStyles({
 const CateringForm = () => {
   const styles = useStyles();
 
-  // Outlook appointment data: sla zowel de ruwe als de weergavewaarde op
   const [appointmentData, setAppointmentData] = useState({
     subject: "Laden...",
     location: "Laden...",
-    start: "Laden...", // Weergavewaarde (locale string)
-    startRaw: null,    // Ruwe datumwaarde
+    start: "Laden...",
+    startRaw: null,
     end: "Laden...",
   });
   const [loading, setLoading] = useState(true);
 
-  // Catering data
   const [cateringData, setCateringData] = useState({
     aantalPersonen: "",
     opmerkingen: "",
@@ -141,7 +139,6 @@ const CateringForm = () => {
     andereOpstelling: "",
   });
 
-  // Voor notificaties (bijv. MessageBar van FluentUI)
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
@@ -165,7 +162,6 @@ const CateringForm = () => {
         return;
       }
 
-      // Haal onderwerp op
       if (item.subject && item.subject.getAsync) {
         item.subject.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -181,7 +177,6 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, subject }));
       }
 
-      // Haal locatie op
       if (item.location && item.location.getAsync) {
         item.location.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -204,7 +199,6 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, location }));
       }
 
-      // Haal starttijd op: sla zowel de ruwe waarde als de weergavewaarde op
       if (item.start && item.start.getAsync) {
         item.start.getAsync((result) => {
           if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -225,7 +219,6 @@ const CateringForm = () => {
         setAppointmentData((prev) => ({ ...prev, start: displayValue, startRaw: rawValue }));
       }
 
-      // Haal eindtijd op
       if (item.end && item.end.getAsync) {
         item.end.getAsync((result) => {
           setAppointmentData((prev) => ({
@@ -258,16 +251,11 @@ const CateringForm = () => {
     setCateringData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Gebruik de submit-knop ("Aanvraag Versturen") om alle gegevens via Graph te verzenden
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Afspraakgegevens:", appointmentData);
-    console.log("Cateringgegevens:", cateringData);
     try {
       const graphToken = await getGraphTokenWithFallback();
-      console.log("Ontvangen Graph token:", graphToken);
 
-      // Converteer de ruwe starttijd naar een ISO-string, indien geldig
       const isoStart =
         appointmentData.startRaw && !isNaN(new Date(appointmentData.startRaw).getTime())
           ? new Date(appointmentData.startRaw).toISOString()
@@ -279,12 +267,11 @@ const CateringForm = () => {
         Datum: isoStart,
         Aantal: cateringData.aantalPersonen ? parseInt(cateringData.aantalPersonen, 10) : 0,
         Opmerking: cateringData.opmerkingen || "",
-        Opstelling: cateringData.opstelling || "",
+        Opstelling:
+          cateringData.opstelling === "Andere"
+            ? cateringData.andereOpstelling || "Andere (niet gespecificeerd)"
+            : cateringData.opstelling,
       };
-
-      if (cateringData.opstelling === "Andere") {
-        itemFields.AndereOpstelling = cateringData.andereOpstelling || "";
-      }
 
       const endpoint = `https://graph.microsoft.com/v1.0/sites/${sitePath}/lists/${listId}/items`;
       const requestBody = { fields: itemFields };
@@ -313,7 +300,6 @@ const CateringForm = () => {
     }
   };
 
-  // Fallback-authenticatie: opent een Office-dialog waarin MSAL de token ophaalt
   const fallbackAuth = () => {
     return new Promise((resolve, reject) => {
       const dialogUrl = window.location.origin + "/fallbackauthdialog.html";
@@ -343,7 +329,6 @@ const CateringForm = () => {
     });
   };
 
-  // Probeer eerst SSO, anders gebruik fallback
   const getGraphTokenWithFallback = async () => {
     try {
       const bootstrapToken = await Office.auth.getAccessToken({
@@ -466,6 +451,19 @@ const CateringForm = () => {
           </MessageBar>
         </div>
       )}
+
+      <img
+        src="/assets/lg.png"
+        alt="easter egg"
+        style={{
+          position: "absolute",
+          bottom: "10px",
+          right: "10px",
+          width: "40px",
+          opacity: 0.15,
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 };

@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0" xsi:type="MailApp">
-  <Id>b10ea726-26f0-455c-b4f0-e59c3fdc4ce8</Id>
-  <Version>1.0.0.3</Version>
-  <ProviderName>PCSA</ProviderName>
+  <Id>d84cf4f1-c0dd-4477-9b35-b15e61c63a3c</Id>
+  <Version>1.0.0.4</Version>
+  <ProviderName>PCSAmandus</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="Amandus Catering add in"/>
+  <DisplayName DefaultValue="PCSA Catering add in (DEVTEST)"/>
   <Description DefaultValue="Add in voor catering aanvragen"/>
-  <IconUrl DefaultValue="https://localhost:3000/assets/hot-coffee_64.png"/>
-  <HighResolutionIconUrl DefaultValue="https://localhost:3000/assets/hot-coffee_128.png"/>
-  <SupportUrl DefaultValue="https://www.amandus.com/help"/>
+  <IconUrl DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/assets/hot-coffee_64.png"/>
+  <HighResolutionIconUrl DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/assets/hot-coffee_128.png"/>
+  <SupportUrl DefaultValue="https://www.amandus.com/"/>
   <AppDomains>
-    <AppDomain>https://www.contoso.com</AppDomain>
+     <AppDomain>https://brave-mushroom-07685f203.6.azurestaticapps.net</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox"/>
@@ -23,7 +23,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://localhost:3000/taskpane.html"/>
+        <SourceLocation DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/taskpane.html"/>
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -72,13 +72,13 @@
       </Hosts>
       <Resources>
         <bt:Images>
-          <bt:Image id="Icon.16x16" DefaultValue="https://localhost:3000/assets/hot-coffee_16.png"/>
-          <bt:Image id="Icon.32x32" DefaultValue="https://localhost:3000/assets/hot-coffee_32.png"/>
-          <bt:Image id="Icon.80x80" DefaultValue="https://localhost:3000/assets/hot-coffee_80.png"/>
+          <bt:Image id="Icon.16x16" DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/assets/hot-coffee_16.png"/>
+          <bt:Image id="Icon.32x32" DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/assets/hot-coffee_32.png"/>
+          <bt:Image id="Icon.80x80" DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/assets/hot-coffee_80.png"/>
         </bt:Images>
         <bt:Urls>
-          <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/commands.html"/>
-          <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
+          <bt:Url id="Commands.Url" DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/commands.html"/>
+          <bt:Url id="Taskpane.Url" DefaultValue="https://brave-mushroom-07685f203.6.azurestaticapps.net/taskpane.html"/>
         </bt:Urls>
         <bt:ShortStrings>
           <bt:String id="GroupLabel" DefaultValue="Amandus Catering"/>
@@ -92,9 +92,8 @@
       </Resources>
  <WebApplicationInfo>
   <Id>82d99688-d922-4bfc-8d2d-e2871eb05ebd</Id>
-  <Resource>api://localhost:3000/82d99688-d922-4bfc-8d2d-e2871eb05ebd</Resource>
+  <Resource>api://brave-mushroom-07685f203.6.azurestaticapps.net/82d99688-d922-4bfc-8d2d-e2871eb05ebd</Resource>
   <Scopes>
-    <Scope>api://localhost:3000/82d99688-d922-4bfc-8d2d-e2871eb05ebd/access_as_user</Scope>
     <Scope>User.Read</Scope>
     <Scope>profile</Scope>
      <Scope>offline_access</Scope>
