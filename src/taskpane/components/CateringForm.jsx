@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { Button, makeStyles } from "@fluentui/react-components";
+import { Button, makeStyles, MessageBar } from "@fluentui/react-components";
 import { ArrowClockwise24Regular } from "@fluentui/react-icons";
-import { MessageBar } from "@fluentui/react-components";
-import form from "form-urlencoded";
+
+// Definieer hier het icon als component
+const ClockIcon = () => <ArrowClockwise24Regular />;
 
 const sitePath = "20200213bvlofc201315.sharepoint.com:/sites/H101-FAC-Voedinsgdienst:";
 const listId = "57642914-fce0-4ab7-8d47-1434d8964cc7";
 
 const useStyles = makeStyles({
   container: {
-    position: "relative", // toegevoegd
+    position: "relative",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -131,14 +132,12 @@ const CateringForm = () => {
     end: "Laden...",
   });
   const [loading, setLoading] = useState(true);
-
   const [cateringData, setCateringData] = useState({
     aantalPersonen: "",
     opmerkingen: "",
     opstelling: "Standaard",
     andereOpstelling: "",
   });
-
   const [notification, setNotification] = useState(null);
 
   useEffect(() => {
@@ -253,6 +252,17 @@ const CateringForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const invalidValues = ["Laden...", "Geen afspraak geselecteerd", "Fout bij ophalen", "Onbekend"];
+    if (
+      invalidValues.includes(appointmentData.subject) ||
+      invalidValues.includes(appointmentData.location)
+    ) {
+      setNotification({
+        message: "Ongeldige afspraakgegevens. Kan niet versturen.",
+        type: "error",
+      });
+      return;
+    }
     try {
       const graphToken = await getGraphTokenWithFallback();
 
@@ -296,7 +306,10 @@ const CateringForm = () => {
       });
     } catch (error) {
       console.error("Fout bij het versturen van het item:", error);
-      alert("Er is een fout opgetreden: " + error.message);
+      setNotification({
+        message: "Er is een fout opgetreden: " + error.message,
+        type: "error",
+      });
     }
   };
 
@@ -344,11 +357,17 @@ const CateringForm = () => {
     }
   };
 
+  // Controleer of de afspraakgegevens geldig zijn (geen placeholder-waarden)
+  const invalidValues = ["Laden...", "Geen afspraak geselecteerd", "Fout bij ophalen", "Onbekend"];
+  const isAppointmentValid =
+    !invalidValues.includes(appointmentData.subject) &&
+    !invalidValues.includes(appointmentData.location);
+
   return (
     <div className={styles.container}>
       <Button
         className={styles.refreshButton}
-        icon={<ArrowClockwise24Regular />}
+        icon={<ClockIcon />}
         onClick={fetchAppointmentData}
       >
         Ververs Afspraakgegevens
@@ -434,8 +453,12 @@ const CateringForm = () => {
           </>
         )}
         <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <button type="submit" className={styles.submitButton}>
-            Aanvraag Versturen
+          <button
+            type="submit"
+            className={styles.submitButton}
+            disabled={!isAppointmentValid}
+          >
+            {isAppointmentValid ? "Aanvraag Versturen" : "Ongeldige gegevens"}
           </button>
         </div>
       </form>
