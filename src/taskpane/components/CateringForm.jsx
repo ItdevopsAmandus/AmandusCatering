@@ -108,7 +108,19 @@ const useStyles = makeStyles({
     "&:active": {
       transform: "scale(0.98)",
     },
+    // Voeg een expliciete disabled-state toe:
+    "&:disabled": {
+      backgroundColor: "#ccc",  // of een andere kleur die aangeeft dat de knop disabled is
+      cursor: "not-allowed",
+      transform: "none",
+      // Zorg dat de hover-state niet van toepassing is wanneer disabled
+      "&:hover": {
+        backgroundColor: "#ccc",
+        transform: "none",
+      },
+    },
   },
+  
   testButton: {
     marginTop: "20px",
     backgroundColor: "#0078d4",
@@ -250,13 +262,18 @@ const CateringForm = () => {
     setCateringData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // Helperfunctie om te controleren of de afspraakgegevens geldig zijn
+  const isValidAppointment = () => {
+    const invalidValues = ["Laden...", "Geen afspraak geselecteerd", "Fout bij ophalen", "Onbekend"];
+    return (
+      !invalidValues.includes(appointmentData.subject) &&
+      !invalidValues.includes(appointmentData.location)
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const invalidValues = ["Laden...", "Geen afspraak geselecteerd", "Fout bij ophalen", "Onbekend"];
-    if (
-      invalidValues.includes(appointmentData.subject) ||
-      invalidValues.includes(appointmentData.location)
-    ) {
+    if (!isValidAppointment()) {
       setNotification({
         message: "Ongeldige afspraakgegevens. Kan niet versturen.",
         type: "error",
@@ -357,18 +374,13 @@ const CateringForm = () => {
     }
   };
 
-  // Controleer of de afspraakgegevens geldig zijn (geen placeholder-waarden)
-  const invalidValues = ["Laden...", "Geen afspraak geselecteerd", "Fout bij ophalen", "Onbekend"];
-  const isAppointmentValid =
-    !invalidValues.includes(appointmentData.subject) &&
-    !invalidValues.includes(appointmentData.location);
-
   return (
     <div className={styles.container}>
       <Button
         className={styles.refreshButton}
         icon={<ClockIcon />}
         onClick={fetchAppointmentData}
+
       >
         Ververs Afspraakgegevens
       </Button>
@@ -454,12 +466,12 @@ const CateringForm = () => {
         )}
         <div style={{ textAlign: "center", marginTop: "20px" }}>
           <button
-            type="submit"
-            className={styles.submitButton}
-            disabled={!isAppointmentValid}
-          >
-            {isAppointmentValid ? "Aanvraag Versturen" : "Ongeldige gegevens"}
-          </button>
+  type="submit"
+  className={styles.submitButton}
+  disabled={!isValidAppointment()}
+>
+  {isValidAppointment() ? "Aanvraag Versturen" : "Ongeldige gegevens"}
+</button>
         </div>
       </form>
 
