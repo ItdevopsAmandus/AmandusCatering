@@ -4,69 +4,68 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <!-- Gebruik MSAL 1.x voor compatibiliteit met oudere browsers -->
-  <script src="https://alcdn.msauth.net/lib/1.4.17/js/msal.min.js"></script>
+  <!-- Gebruik MSAL 2.x voor verbeterde compatibiliteit met browsers die derdencookies blokkeren -->
+  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
   <title>Fallback Auth Dialog</title>
 </head>
 <body>
   <p>Authenticatie: even geduld...</p>
   <script>
-    // MSAL
-    var msalConfig = {
+    // Configuratie voor MSAL v2 (Authorization Code Flow met PKCE)
+    const msalConfig = {
       auth: {
         clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", // CLIENT_ID
         authority: "https://login.microsoftonline.com/82022306-deb0-41be-94c4-763bf46d3547",
         redirectUri: window.location.origin + "/fallbackauthdialog.html",
-        navigateToLoginRequestUrl: false
+        navigateToLoginRequestUrl: false,
       },
       cache: {
         cacheLocation: "localStorage",
-        storeAuthStateInCookie: true
-      }
+      },
     };
 
-    
-    var loginRequest = {
-      scopes: ["User.Read", "Sites.ReadWrite.All"]
+    const loginRequest = {
+      scopes: ["User.Read", "Sites.ReadWrite.All"],
     };
 
-    var msalInstance = new Msal.UserAgentApplication(msalConfig);
+    const msalInstance = new msal.PublicClientApplication(msalConfig);
 
-    msalInstance.handleRedirectCallback(function(error, response) {
-      if (error) {
-        console.error("MSAL-fout:", error);
-        Office.onReady(function() {
-          Office.context.ui.messageParent(JSON.stringify({
-            status: "failure",
-            error: error.errorMessage || error.message || error
-          }));
-        });
-        return;
-      }
+    function sendResult(status, payload) {
+      Office.onReady(() => {
+        Office.context.ui.messageParent(
+          JSON.stringify({ status: status, ...(status === "success" ? { result: payload } : { error: payload }) })
+        );
+      });
+    }
 
-      if (response && response.tokenType === "access_token") {
-        Office.onReady(function() {
-          Office.context.ui.messageParent(JSON.stringify({
-            status: "success",
-            result: response.accessToken
-          }));
+    function acquireToken(account) {
+      msalInstance
+        .acquireTokenSilent({ ...loginRequest, account })
+        .then((response) => {
+          sendResult("success", response.accessToken);
+        })
+        .catch(() => {
+          msalInstance.acquireTokenRedirect(loginRequest);
         });
-      } else {
-        msalInstance.acquireTokenRedirect(loginRequest);
-      }
-    });
+    }
 
-    msalInstance.acquireTokenSilent(loginRequest)
-      .then(function(response) {
-        Office.onReady(function() {
-          Office.context.ui.messageParent(JSON.stringify({
-            status: "success",
-            result: response.accessToken
-          }));
-        });
+    msalInstance
+      .handleRedirectPromise()
+      .then((response) => {
+        if (response !== null && response.account) {
+          acquireToken(response.account);
+        } else {
+          const accounts = msalInstance.getAllAccounts();
+          if (accounts.length > 0) {
+            acquireToken(accounts[0]);
+          } else {
+            msalInstance.loginRedirect(loginRequest);
+          }
+        }
       })
-      .catch(function() {
-        msalInstance.loginRedirect(loginRequest);
+      .catch((error) => {
+        console.error("MSAL-fout:", error);
+        sendResult("failure", error.errorMessage || error.message || error);
       });
   </script>
 </body>
