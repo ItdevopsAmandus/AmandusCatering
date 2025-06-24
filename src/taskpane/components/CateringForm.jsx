@@ -351,8 +351,8 @@ const CateringForm = () => {
         allowConsentPrompt: true,
         forMSGraphAccess: true,
       });
-      console.log("Office SSO-token opgehaald, maar geen server OBO => fallback");
-      return fallbackAuth();
+      console.log("Office SSO-token opgehaald");
+      return bootstrapToken;
     } catch (err) {
       console.warn("SSO mislukt of niet ondersteund, fallback auth wordt gebruikt:", err);
       return fallbackAuth();
