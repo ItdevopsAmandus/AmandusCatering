@@ -11,7 +11,7 @@
   <p>Authenticatie: even geduld...</p>
   <script>
     // MSAL
-    const msalConfig = {
+    var msalConfig = {
       auth: {
         clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", //CLIENT_ID
         authority: "https://login.microsoftonline.com/82022306-deb0-41be-94c4-763bf46d3547",
@@ -24,7 +24,7 @@
       },
       system: {
         loggerOptions: {
-          loggerCallback: (level, message, containsPii) => {
+          loggerCallback: function(level, message, containsPii) {
             if (!containsPii) {
               console.log(message);
             }
@@ -34,37 +34,34 @@
     };
 
     
-    const loginRequest = {
+    var loginRequest = {
       scopes: ["User.Read", "Sites.ReadWrite.All"]
     };
 
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
+    var msalInstance = new msal.PublicClientApplication(msalConfig);
 
     // Handle redirect
     msalInstance.handleRedirectPromise()
-      .then(response => {
+      .then(function(response) {
         if (!response) {
           // Nog geen token: start login
           msalInstance.loginRedirect(loginRequest);
         } else {
-          
           if (response.accessToken && response.tokenType === "Bearer") {
-           
-            Office.onReady(() => {
+            Office.onReady(function() {
               Office.context.ui.messageParent(JSON.stringify({
                 status: "success",
                 result: response.accessToken
               }));
             });
           } else if (response.idToken) {
-           
             msalInstance.acquireTokenRedirect(loginRequest);
           }
         }
       })
-      .catch(error => {
+      .catch(function(error) {
         console.error("MSAL-fout:", error);
-        Office.onReady(() => {
+        Office.onReady(function() {
           Office.context.ui.messageParent(JSON.stringify({
             status: "failure",
             error: error.message || error
