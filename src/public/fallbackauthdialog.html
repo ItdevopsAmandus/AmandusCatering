@@ -6,71 +6,11 @@
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
   <!-- Gebruik MSAL 2.x voor verbeterde compatibiliteit met browsers die derdencookies blokkeren -->
   <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <script src="polyfill.js"></script>
   <title>Fallback Auth Dialog</title>
 </head>
 <body>
   <p>Authenticatie: even geduld...</p>
-  <script>
-    // Configuratie voor MSAL v2 (Authorization Code Flow met PKCE)
-    const msalConfig = {
-      auth: {
-        clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", // CLIENT_ID
-        authority: "https://login.microsoftonline.com/82022306-deb0-41be-94c4-763bf46d3547",
-        redirectUri: window.location.origin + "/fallbackauthdialog.html",
-        navigateToLoginRequestUrl: false,
-      },
-      cache: {
-        cacheLocation: "localStorage",
-      },
-      system: {
-        // Nodig om redirect logins toe te laten binnen een Office dialoog
-        allowRedirectInIframe: true,
-      },
-    };
-
-    const loginRequest = {
-      scopes: ["User.Read", "Sites.ReadWrite.All"],
-    };
-
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
-
-    function sendResult(status, payload) {
-      Office.onReady(() => {
-        Office.context.ui.messageParent(
-          JSON.stringify({ status: status, ...(status === "success" ? { result: payload } : { error: payload }) })
-        );
-      });
-    }
-
-    function acquireToken(account) {
-      msalInstance
-        .acquireTokenSilent({ ...loginRequest, account })
-        .then((response) => {
-          sendResult("success", response.accessToken);
-        })
-        .catch(() => {
-          msalInstance.acquireTokenRedirect(loginRequest);
-        });
-    }
-
-    msalInstance
-      .handleRedirectPromise()
-      .then((response) => {
-        if (response !== null && response.account) {
-          acquireToken(response.account);
-        } else {
-          const accounts = msalInstance.getAllAccounts();
-          if (accounts.length > 0) {
-            acquireToken(accounts[0]);
-          } else {
-            msalInstance.loginRedirect(loginRequest);
-          }
-        }
-      })
-      .catch((error) => {
-        console.error("MSAL-fout:", error);
-        sendResult("failure", error.errorMessage || error.message || error);
-      });
-  </script>
+  <script src="fallbackauthdialog.js"></script>
 </body>
 </html>

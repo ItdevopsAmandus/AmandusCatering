@@ -25,6 +25,10 @@ module.exports = async (env, options) => {
         dependOn: "react",
       },
       commands: "./src/commands/commands.js",
+      fallbackauthdialog: {
+        import: "./src/public/fallbackauthdialog.js",
+        dependOn: "polyfill",
+      },
     },
     output: {
       clean: true,
