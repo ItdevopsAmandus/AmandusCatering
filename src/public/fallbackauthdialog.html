@@ -4,73 +4,75 @@
   <meta charset="UTF-8" />
   <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
   <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
-  <!-- Gebruik MSAL 2.x voor verbeterde compatibiliteit met browsers die derdencookies blokkeren -->
-  <script src="https://alcdn.msauth.net/browser/2.38.0/js/msal-browser.min.js"></script>
+  <!-- Gebruik MSAL 1.x zodat de dialoog correct werkt in oudere omgevingen -->
+  <script src="https://alcdn.msauth.net/lib/1.4.18/js/msal.min.js"></script>
   <title>Fallback Auth Dialog</title>
 </head>
 <body>
   <p>Authenticatie: even geduld...</p>
   <script>
-    // Configuratie voor MSAL v2 (Authorization Code Flow met PKCE)
-    const msalConfig = {
+    // Configuratie voor MSAL v1 (Implicit Flow)
+    var msalConfig = {
       auth: {
         clientId: "82d99688-d922-4bfc-8d2d-e2871eb05ebd", // CLIENT_ID
         authority: "https://login.microsoftonline.com/82022306-deb0-41be-94c4-763bf46d3547",
         redirectUri: window.location.origin + "/fallbackauthdialog.html",
-        navigateToLoginRequestUrl: false,
+        navigateToLoginRequestUrl: false
       },
       cache: {
-        cacheLocation: "localStorage",
+        cacheLocation: "localStorage"
       },
       system: {
         // Nodig om redirect logins toe te laten binnen een Office dialoog
-        allowRedirectInIframe: true,
-      },
+        allowRedirectInIframe: true
+      }
     };
 
-    const loginRequest = {
-      scopes: ["User.Read", "Sites.ReadWrite.All"],
+    var loginRequest = {
+      scopes: ["User.Read", "Sites.ReadWrite.All"]
     };
 
-    const msalInstance = new msal.PublicClientApplication(msalConfig);
+    var msalInstance = new Msal.UserAgentApplication(msalConfig);
 
     function sendResult(status, payload) {
-      Office.onReady(() => {
-        Office.context.ui.messageParent(
-          JSON.stringify({ status: status, ...(status === "success" ? { result: payload } : { error: payload }) })
-        );
+      Office.onReady(function () {
+        var message = { status: status };
+        if (status === "success") {
+          message.result = payload;
+        } else {
+          message.error = payload;
+        }
+        Office.context.ui.messageParent(JSON.stringify(message));
       });
     }
 
     function acquireToken(account) {
-      msalInstance
-        .acquireTokenSilent({ ...loginRequest, account })
-        .then((response) => {
-          sendResult("success", response.accessToken);
-        })
-        .catch(() => {
-          msalInstance.acquireTokenRedirect(loginRequest);
-        });
+      var silentRequest = {
+        scopes: loginRequest.scopes,
+        account: account
+      };
+      msalInstance.acquireTokenSilent(silentRequest).then(function (response) {
+        sendResult("success", response.accessToken);
+      }).catch(function () {
+        msalInstance.acquireTokenRedirect(loginRequest);
+      });
     }
 
-    msalInstance
-      .handleRedirectPromise()
-      .then((response) => {
-        if (response !== null && response.account) {
-          acquireToken(response.account);
+    msalInstance.handleRedirectCallback(function (response) {
+      if (response !== null && response.account) {
+        acquireToken(response.account);
+      } else {
+        var account = msalInstance.getAccount();
+        if (account) {
+          acquireToken(account);
         } else {
-          const accounts = msalInstance.getAllAccounts();
-          if (accounts.length > 0) {
-            acquireToken(accounts[0]);
-          } else {
-            msalInstance.loginRedirect(loginRequest);
-          }
+          msalInstance.loginRedirect(loginRequest);
         }
-      })
-      .catch((error) => {
-        console.error("MSAL-fout:", error);
-        sendResult("failure", error.errorMessage || error.message || error);
-      });
+      }
+    }, function (error) {
+      console.error("MSAL-fout:", error);
+      sendResult("failure", error.errorMessage || error.message || error);
+    });
   </script>
 </body>
 </html>
